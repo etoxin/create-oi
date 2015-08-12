@@ -357,10 +357,6 @@ var create = (function() {
             case 'all':
                 sendCommand(cmds.LED, [15, 1, 1]);
                 break;
-            case 'test':
-                sendCommand(cmds.LED, [2, 0, 0]);
-                break;
-
         }
     };
 

@@ -16,7 +16,6 @@ robot.on('ready', function() {
             process.stdin.pause();
         }
 
-
         // turn based on which bumper sensor got hit
         switch(key.name) {
             case 'right':
