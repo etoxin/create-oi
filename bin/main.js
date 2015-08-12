@@ -16,6 +16,7 @@ var create = (function() {
         SAFE:   0x83,
         DRIVE:  0x89,
         LED:    0x8B,
+        DISPLAY:0xA3,
         SONG:   0x8C,
         PLAY:   0x8D,
         STREAM: 0x94,
@@ -358,6 +359,11 @@ var create = (function() {
                 sendCommand(cmds.LED, [15, 1, 1]);
                 break;
         }
+    };
+
+    module.display = function(){
+        // work in progress. This displays a "1" or a "L" ?
+        sendCommand(cmds.DISPLAY, [0, 0, 0, 0x6D]);
     };
 
     /**
