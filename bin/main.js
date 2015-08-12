@@ -10,6 +10,7 @@ var create = (function() {
     var serial;
     var watchdog = false;
 
+    // opcodes in HEX
     var cmds = {
         START:  0x80,
         SAFE:   0x83,
@@ -17,10 +18,13 @@ var create = (function() {
         LED:    0x8B,
         SONG:   0x8C,
         PLAY:   0x8D,
-        STREAM: 0x94
+        STREAM: 0x94,
+        STOP:   0xAD,
+        RESET:  0x07,
+        SEEKDOCK: 0x8F
     };
 
-    var sensors = { 
+    var sensors = {
         BUMP_WDROP: 7,
         WALL:       8,
         BUTTONS:    18,
@@ -66,24 +70,24 @@ var create = (function() {
     function parse(buffer) {
         // index to start reading packet 
         // data, default to invalid value
-        var start = -1;  
+        var start = -1;
 
-        if (pkt.length === 0) 
+        if (pkt.length === 0)
             start = seek(buffer);
-        else 
+        else
             start = 0; // we already have the header stored in pkt, read full buff
 
         if (start === -1) // couldn't seek to START_BYTE
-            return;    
+            return;
 
-        for (var i = start; i < buffer.length; i++) 
+        for (var i = start; i < buffer.length; i++)
             pkt.push(buffer[i]);
 
         if (buffer.length < start + 2) // LEN_IDX can't be read yet
-            return; 
+            return;
 
         // START_BYTE found, but not actually start of pkt
-        if (buffer[start+1] === 0) { 
+        if (buffer[start+1] === 0) {
             pkt = [];
             return;
         }
@@ -91,12 +95,12 @@ var create = (function() {
         // +3 due to START byte, COUNT byte & CHKSUM bytes included with all pkts
         if (pkt.length < (pkt[LEN_IDX] + 3))
             return;
-        
+
         // extract one whole packet from pkt buffer
         var currPkt = pkt.splice(0,pkt[LEN_IDX]+3);
 
         var chksum = 0;
-        for (var i = 0; i < currPkt.length; i++) 
+        for (var i = 0; i < currPkt.length; i++)
             chksum += currPkt[i];
 
         chksum = chksum & 0xff;
@@ -114,7 +118,7 @@ var create = (function() {
                                 eventer.emit('bump', { which: bumperIdxToName(data) });
                             }
                         }
-                        if (ldata != 0 && data === 0) 
+                        if (ldata != 0 && data === 0)
                             eventer.emit('bumpend', { which: bumperIdxToName(ldata) });
                         // wheeldrop occured!
                         if (data > 0 && data > 4) {
@@ -125,7 +129,7 @@ var create = (function() {
                         ldata = data;
                         idx += 2;
                         sensorMsgsParsed++;
-                    break;
+                        break;
                     case sensors.DISTANCE:
                         var val = (currPkt[idx+1] << 8) | currPkt[idx+2];
                         if (val > 32767) {
@@ -134,7 +138,7 @@ var create = (function() {
                         distance += val;
                         idx += 3;
                         sensorMsgsParsed++;
-                    break;
+                        break;
                     case sensors.ANGLE:
                         var val = (currPkt[idx+1] << 8) | currPkt[idx+2];
                         if (val > 32767) {
@@ -143,7 +147,7 @@ var create = (function() {
                         angle += val;
                         idx += 3;
                         sensorMsgsParsed++;
-                    break;
+                        break;
                     default:
                         console.log("WARN: couldn't parse incomming OI pkt");
                         idx++; // prevents inf loop
@@ -167,37 +171,37 @@ var create = (function() {
     function initCreate() {
         sendCommand(cmds.START);
         module.wait(100)
-        .then(function() {
-            sendCommand(cmds.SAFE);
-            return 100; // wait amount
-        })
-        .then(module.wait)
-        .then(function() {
-            // set song 0 to single beep
-            sendCommand(cmds.SONG, [0x0, 0x01, 72, 10]);
-            return 100;
-        })
-        .then(module.wait)
-        .then(function() {
-            // play song 0 
-            sendCommand(cmds.PLAY, [0x0]);
-            return 100;
-        })
-        .then(module.wait)
-        .then(function() {
-            sendCommand(cmds.STREAM, [3, 7, 19, 20]);
-            return 100;
-        })
-        .then(module.wait)
-        .then(function() {
-            // turn power LED on (and green)
-            sendCommand(cmds.LED, [8, 0, 255]);
-            return 100;
-        })
-        .then(module.wait)
-        .then(function() {
-            eventer.emit('ready');
-        });
+            .then(function() {
+                sendCommand(cmds.SAFE);
+                return 100; // wait amount
+            })
+            .then(module.wait)
+            .then(function() {
+                // set song 0 to single beep
+                sendCommand(cmds.SONG, [0x0, 0x01, 72, 10]);
+                return 100;
+            })
+            .then(module.wait)
+            .then(function() {
+                // play song 0
+                sendCommand(cmds.PLAY, [0x0]);
+                return 100;
+            })
+            .then(module.wait)
+            .then(function() {
+                sendCommand(cmds.STREAM, [3, 7, 19, 20]);
+                return 100;
+            })
+            .then(module.wait)
+            .then(function() {
+                // turn power LED on (and green)
+                sendCommand(cmds.LED, [8, 0, 255]);
+                return 100;
+            })
+            .then(module.wait)
+            .then(function() {
+                eventer.emit('ready');
+            });
     }
 
     // exported methods
@@ -209,8 +213,10 @@ var create = (function() {
         FULL:    "FULL"
     };
 
+    // 57600  create 1
+
     module.init = function(settings) {
-        serial = new SerialPort(settings.serialport, { baudrate: 57600, bufferSize: 5 });
+        serial = new SerialPort(settings.serialport, { baudrate: 115200, bufferSize: 5 });
 
         // internal serial event handlers
 
@@ -238,7 +244,7 @@ var create = (function() {
                 watchdog = false;
             }, 2000);
         });
-    }; 
+    };
 
     module.getDistance = function() {
         prior = prior.then(function() {
@@ -260,7 +266,7 @@ var create = (function() {
         prior = prior.then(function() {
             sendCommand(cmds.SAFE);
             if (Math.abs(rad) < 0.0001) {
-               rad = DRV_FWD_RAD;
+                rad = DRV_FWD_RAD;
             }
             sendCommand(cmds.DRIVE, [uB(fwd), lB(fwd), uB(rad), lB(rad)]);
             return Q.resolve();
@@ -270,6 +276,10 @@ var create = (function() {
 
     module.rotate = function(vel) {
         return module.drive(vel, 1);
+    };
+
+    module.stop = function(){
+        sendCommand(cmds.STOP)
     };
 
     module.wait = function(ms) {
@@ -285,7 +295,7 @@ var create = (function() {
         mode = m;
         sendCommand(mode);
     };
-    
+
     module.getMode = function() {
         return mode;
     };
@@ -293,7 +303,7 @@ var create = (function() {
     listeners = { 'bump': [], 'bumpend': [] };
 
     module.on = function(evt, cb) {
-        eventer.on(evt, function(e) { 
+        eventer.on(evt, function(e) {
             // set context to module, call it
             cb.call(module, e);
         });
@@ -306,18 +316,18 @@ var create = (function() {
     // expose functions to the REPL's context
     // uncomment for REPL use
     /*
-    var repl = require("repl");
-    var local = repl.start({ prompt: "robot> ", ignoreUndefined: true});
-    local.context.drive = module.drive;
-    local.context.wait = module.wait;
-    local.context.setMode = module.setMode;
-    local.context.getMode = module.getMode;
-    local.context.getDistance = module.getDistance;
-    local.context.getAngle = module.getAngle;
-    local.context.on = module.on;
-    local.context.init = module.init;
-    local.context.rotate = module.rotate;
-    */
+     var repl = require("repl");
+     var local = repl.start({ prompt: "robot> ", ignoreUndefined: true});
+     local.context.drive = module.drive;
+     local.context.wait = module.wait;
+     local.context.setMode = module.setMode;
+     local.context.getMode = module.getMode;
+     local.context.getDistance = module.getDistance;
+     local.context.getAngle = module.getAngle;
+     local.context.on = module.on;
+     local.context.init = module.init;
+     local.context.rotate = module.rotate;
+     */
 
     return module;
 }());
