@@ -16,8 +16,9 @@
     "irobot"
   ],
   "dependencies": {
-    "serialport": ">= 0.2.0",
-    "q": ">= 0.8.0"
+    "keypress": "^0.2.1",
+    "q": ">= 0.8.0",
+    "serialport": ">= 0.2.0"
   },
   "author": "Jeff Rousseau <jroussea@cs.uml.edu>",
   "license": "GPL",

@@ -274,14 +274,26 @@ var create = (function() {
         return prior;
     };
 
+    /**
+     * Rotate
+     * @param vel
+     */
     module.rotate = function(vel) {
         return module.drive(vel, 1);
     };
 
+    /**
+     * Stop robot
+     */
     module.stop = function(){
         sendCommand(cmds.STOP)
     };
 
+    /**
+     * Pause all actions.
+     * @param ms
+     * @returns {*}
+     */
     module.wait = function(ms) {
         prior = prior.then(function() {
             var deferred = Q.defer();
@@ -291,6 +303,11 @@ var create = (function() {
         return prior;
     };
 
+    module.led = function() {};
+
+    /**
+     * @param m
+     */
     module.setMode = function(m) {
         mode = m;
         sendCommand(mode);

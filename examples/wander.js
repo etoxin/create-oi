@@ -10,10 +10,10 @@ robot.on('ready', function() {
 
 var bumpHndlr = function(bumperEvt) {
     var r = this;
-    
+
     // temporarily disable further bump events
     // getting multiple bump events while one is in progress
-    // will cause weird interleaving of our robot behavior 
+    // will cause weird interleaving of our robot behavior
     r.off('bump');
 
     // backup a bit
@@ -32,17 +32,17 @@ var bumpHndlr = function(bumperEvt) {
             r.wait(1000);
             break;
         case 'right':
-            r.rotate(SPEED); // turn left 
+            r.rotate(SPEED); // turn left
             r.wait(1000);
             break;
     }
 
     // onward!
     r.drive(SPEED, 0)
-    .then(function() {
-        // turn handler back on
-        r.on('bump', bumpHndlr);
-    });
+        .then(function() {
+            // turn handler back on
+            r.on('bump', bumpHndlr);
+        });
 };
 
 robot.on('bump', bumpHndlr);
