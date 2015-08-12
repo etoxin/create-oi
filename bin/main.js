@@ -35,10 +35,20 @@ var create = (function() {
 
     // helpers
 
+    /**
+     *
+     * @param word
+     * @returns {*}
+     */
     var uB = function(word) {
         return word >> 8;
     };
 
+    /**
+     *
+     * @param word
+     * @returns {number}
+     */
     var lB = function(word) {
         return word & 0x000000ff;
     };
@@ -47,6 +57,11 @@ var create = (function() {
     var angle = 0;
     var pkt = []; // stores working packet data
 
+    /**
+     *
+     * @param buffer
+     * @returns {number}
+     */
     function seek(buffer) {
         for (var i = 0; i < buffer.length; i++) {
             if (buffer[i] === START_BYTE)
@@ -59,6 +74,11 @@ var create = (function() {
     var LEN_IDX = 1;
     var START_BYTE = 0x13;
 
+    /**
+     *
+     * @param idx
+     * @returns {*}
+     */
     function bumperIdxToName(idx) {
         switch(idx) {
             case 1: return "right";
@@ -67,6 +87,10 @@ var create = (function() {
         }
     }
 
+    /**
+     *
+     * @param buffer
+     */
     function parse(buffer) {
         // index to start reading packet 
         // data, default to invalid value
@@ -159,6 +183,11 @@ var create = (function() {
         pkt = []; // clear pkt buff contents
     }
 
+    /**
+     *
+     * @param cmd
+     * @param payload
+     */
     function sendCommand(cmd, payload) {
         if (typeof payload === "undefined") {
             serial.write(new Buffer([cmd]));
@@ -303,7 +332,37 @@ var create = (function() {
         return prior;
     };
 
-    module.led = function() {};
+    /**
+     *
+     * @param cmd
+     */
+    module.led = function(cmd) {
+
+        switch(cmd) {
+            case 'off':
+                sendCommand(cmds.LED, [0, 1, 1]);
+                break;
+            case 'dirtDetect':
+                sendCommand(cmds.LED, [1, 1, 1]);
+                break;
+            case 'spot':
+                sendCommand(cmds.LED, [2, 1, 1]);
+                break;
+            case 'dock':
+                sendCommand(cmds.LED, [4, 1, 1]);
+                break;
+            case 'warning':
+                sendCommand(cmds.LED, [8, 1, 1]);
+                break;
+            case 'all':
+                sendCommand(cmds.LED, [15, 1, 1]);
+                break;
+            case 'test':
+                sendCommand(cmds.LED, [2, 0, 0]);
+                break;
+
+        }
+    };
 
     /**
      * @param m
@@ -313,6 +372,10 @@ var create = (function() {
         sendCommand(mode);
     };
 
+    /**
+     *
+     * @returns {string}
+     */
     module.getMode = function() {
         return mode;
     };
