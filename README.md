@@ -1,4 +1,4 @@
-create-oi: iRobot Create&#174; driver for node
+create-oi: iRobot Create&#174; 2 driver for node
 ========================================
 
 An API for interacting with an iRobot Create. Because robots are fun.
